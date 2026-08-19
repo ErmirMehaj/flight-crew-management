@@ -5,6 +5,7 @@ import com.mehaj.flightcrew.dto.AircraftResponse;
 import com.mehaj.flightcrew.dto.AircraftUpdateRequest;
 import com.mehaj.flightcrew.dto.AvailabilityQuery;
 import com.mehaj.flightcrew.service.AircraftService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/aircraft")
 @RequiredArgsConstructor
+@Tag(name = "Aircraft", description = "Manage the fleet")
 public class AircraftController {
 
     private final AircraftService aircraftService;

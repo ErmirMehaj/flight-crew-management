@@ -6,6 +6,7 @@ import com.mehaj.flightcrew.dto.PilotResponse;
 import com.mehaj.flightcrew.dto.PilotStatisticsResponse;
 import com.mehaj.flightcrew.dto.PilotUpdateRequest;
 import com.mehaj.flightcrew.service.PilotService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/pilots")
 @RequiredArgsConstructor
+@Tag(name = "Pilots", description = "Manage pilots and view their flight statistics")
 public class PilotController {
 
     private final PilotService pilotService;

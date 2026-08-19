@@ -5,6 +5,7 @@ import com.mehaj.flightcrew.dto.CrewMemberCreateRequest;
 import com.mehaj.flightcrew.dto.CrewMemberResponse;
 import com.mehaj.flightcrew.dto.CrewMemberUpdateRequest;
 import com.mehaj.flightcrew.service.CrewMemberService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/crew-members")
 @RequiredArgsConstructor
+@Tag(name = "Crew Members", description = "Manage cabin crew members")
 public class CrewMemberController {
 
     private final CrewMemberService crewMemberService;
