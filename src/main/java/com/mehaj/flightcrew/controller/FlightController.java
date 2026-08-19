@@ -1,0 +1,49 @@
+package com.mehaj.flightcrew.controller;
+
+import com.mehaj.flightcrew.dto.FlightCreateRequest;
+import com.mehaj.flightcrew.dto.FlightResponse;
+import com.mehaj.flightcrew.dto.FlightUpdateRequest;
+import com.mehaj.flightcrew.service.FlightService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/flights")
+@RequiredArgsConstructor
+public class FlightController {
+
+    private final FlightService flightService;
+
+    @PostMapping
+    public ResponseEntity<FlightResponse> createFlight(@Valid @RequestBody FlightCreateRequest request) {
+        FlightResponse created = flightService.createFlight(request);
+        return ResponseEntity.created(URI.create("/api/flights/" + created.getId())).body(created);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<FlightResponse>> getAllFlights() {
+        return ResponseEntity.ok(flightService.getAllFlights());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<FlightResponse> getFlightById(@PathVariable Long id) {
+        return ResponseEntity.ok(flightService.getFlightById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<FlightResponse> updateFlight(@PathVariable Long id,
+                                                         @Valid @RequestBody FlightUpdateRequest request) {
+        return ResponseEntity.ok(flightService.updateFlight(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFlight(@PathVariable Long id) {
+        flightService.deleteFlight(id);
+        return ResponseEntity.noContent().build();
+    }
+}
