@@ -219,6 +219,17 @@ public class FlightAssignmentService {
         return flightMapper.toResponse(saved);
     }
 
+    @Transactional
+    public FlightResponse cancelFlight(Long flightId) {
+        Flight flight = findFlightOrThrow(flightId);
+        requireScheduled(flight);
+
+        flight.setStatus(FlightStatus.CANCELLED);
+        Flight saved = flightRepository.save(flight);
+        log.info("Cancelled flight id={}", flightId);
+        return flightMapper.toResponse(saved);
+    }
+
     private double calculateFlightHours(Flight flight) {
         return Duration.between(flight.getDepartureTime(), flight.getArrivalTime()).toMinutes() / 60.0;
     }

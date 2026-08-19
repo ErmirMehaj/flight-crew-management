@@ -74,4 +74,9 @@ public class FlightController {
     public ResponseEntity<FlightResponse> completeFlight(@PathVariable Long id) {
         return ResponseEntity.ok(flightAssignmentService.completeFlight(id));
     }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<FlightResponse> cancelFlight(@PathVariable Long id) {
+        return ResponseEntity.ok(flightAssignmentService.cancelFlight(id));
+    }
 }
