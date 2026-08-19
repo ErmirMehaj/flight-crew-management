@@ -44,7 +44,7 @@ Flight ──1:N-> FlightPilotAssignment ──N:1-> Pilot
 Flight ──1:N-> FlightCrewAssignment  ──N:1-> CrewMember
 ```
 
-`FlightPilotAssignment`/`FlightCrewAssignment` are explicit join entities (not `@ManyToMany`) so each assignment can carry its own role and timestamp — the standard pattern for a many-to-many relationship that needs metadata on the relationship itself.
+`FlightPilotAssignment`/`FlightCrewAssignment` are explicit join entities (not `@ManyToMany`) so each assignment can carry its own role and timestamp, the standard pattern for a many-to-many relationship that needs metadata on the relationship itself.
 
 ## Business rules
 
