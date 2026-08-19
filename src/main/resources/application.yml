@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: flight-crew-management
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/flightcrew
+    username: flightcrew
+    password: flightcrew
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.mehaj.flightcrew: DEBUG

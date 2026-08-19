@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flightcrew-postgres
+    environment:
+      POSTGRES_DB: flightcrew
+      POSTGRES_USER: flightcrew
+      POSTGRES_PASSWORD: flightcrew
+    ports:
+      - "5432:5432"
+    volumes:
+      - flightcrew-pgdata:/var/lib/postgresql/data
+
+volumes:
+  flightcrew-pgdata:
