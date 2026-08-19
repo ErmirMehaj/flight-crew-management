@@ -18,6 +18,11 @@ spring:
 server:
   port: 8080
 
+crew:
+  # Max hours a crew member may work within a rolling 7-day window
+  # (window = [flight date - 6 days, flight date]).
+  max-weekly-hours: 40
+
 logging:
   level:
     com.mehaj.flightcrew: DEBUG

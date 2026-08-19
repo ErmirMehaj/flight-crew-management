@@ -3,6 +3,7 @@ package com.mehaj.flightcrew.controller;
 import com.mehaj.flightcrew.dto.FlightCreateRequest;
 import com.mehaj.flightcrew.dto.FlightResponse;
 import com.mehaj.flightcrew.dto.FlightUpdateRequest;
+import com.mehaj.flightcrew.service.FlightAssignmentService;
 import com.mehaj.flightcrew.service.FlightService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class FlightController {
 
     private final FlightService flightService;
+    private final FlightAssignmentService flightAssignmentService;
 
     @PostMapping
     public ResponseEntity<FlightResponse> createFlight(@Valid @RequestBody FlightCreateRequest request) {
@@ -45,5 +47,10 @@ public class FlightController {
     public ResponseEntity<Void> deleteFlight(@PathVariable Long id) {
         flightService.deleteFlight(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/aircraft/{aircraftId}")
+    public ResponseEntity<FlightResponse> assignAircraft(@PathVariable Long id, @PathVariable Long aircraftId) {
+        return ResponseEntity.ok(flightAssignmentService.assignAircraft(id, aircraftId));
     }
 }
