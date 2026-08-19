@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -47,6 +48,12 @@ public class PilotService {
 
     public List<PilotResponse> getAllPilots() {
         return pilotRepository.findAll().stream()
+                .map(pilotMapper::toResponse)
+                .toList();
+    }
+
+    public List<PilotResponse> getAvailablePilots(LocalDateTime start, LocalDateTime end) {
+        return pilotRepository.findAvailablePilots(start, end).stream()
                 .map(pilotMapper::toResponse)
                 .toList();
     }

@@ -1,5 +1,6 @@
 package com.mehaj.flightcrew.controller;
 
+import com.mehaj.flightcrew.dto.AvailabilityQuery;
 import com.mehaj.flightcrew.dto.PilotCreateRequest;
 import com.mehaj.flightcrew.dto.PilotResponse;
 import com.mehaj.flightcrew.dto.PilotUpdateRequest;
@@ -28,6 +29,11 @@ public class PilotController {
     @GetMapping
     public ResponseEntity<List<PilotResponse>> getAllPilots() {
         return ResponseEntity.ok(pilotService.getAllPilots());
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<PilotResponse>> getAvailablePilots(@Valid AvailabilityQuery query) {
+        return ResponseEntity.ok(pilotService.getAvailablePilots(query.getDepartureTime(), query.getArrivalTime()));
     }
 
     @GetMapping("/{id}")
