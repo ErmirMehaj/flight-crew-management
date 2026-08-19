@@ -18,7 +18,7 @@ It's not just CRUD. The interesting part is the scheduling logic: pilots can't b
 
 ## Architecture
 
-Standard layered architecture — each layer depends only on the one directly beneath it:
+Standard layered architecture, each layer depends only on the one directly beneath it:
 
 ```
 controller  -> HTTP concerns only: status codes, routing, request/response shape
