@@ -2,11 +2,15 @@ package com.mehaj.flightcrew.service;
 
 import com.mehaj.flightcrew.dto.PilotCreateRequest;
 import com.mehaj.flightcrew.dto.PilotResponse;
+import com.mehaj.flightcrew.dto.PilotStatisticsResponse;
 import com.mehaj.flightcrew.dto.PilotUpdateRequest;
+import com.mehaj.flightcrew.entity.FlightPilotAssignment;
+import com.mehaj.flightcrew.entity.FlightStatus;
 import com.mehaj.flightcrew.entity.Pilot;
 import com.mehaj.flightcrew.exception.DuplicateResourceException;
 import com.mehaj.flightcrew.exception.ResourceNotFoundException;
 import com.mehaj.flightcrew.mapper.PilotMapper;
+import com.mehaj.flightcrew.repository.FlightPilotAssignmentRepository;
 import com.mehaj.flightcrew.repository.PilotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +27,7 @@ import java.util.List;
 public class PilotService {
 
     private final PilotRepository pilotRepository;
+    private final FlightPilotAssignmentRepository flightPilotAssignmentRepository;
     private final PilotMapper pilotMapper;
 
     @Transactional
@@ -56,6 +61,27 @@ public class PilotService {
         return pilotRepository.findAvailablePilots(start, end).stream()
                 .map(pilotMapper::toResponse)
                 .toList();
+    }
+
+    public PilotStatisticsResponse getPilotStatistics(Long id) {
+        Pilot pilot = findPilotOrThrow(id);
+        List<FlightPilotAssignment> assignments = flightPilotAssignmentRepository.findByPilotId(id);
+
+        long completed = assignments.stream()
+                .filter(a -> a.getFlight().getStatus() == FlightStatus.COMPLETED)
+                .count();
+        long upcoming = assignments.stream()
+                .filter(a -> a.getFlight().getStatus() == FlightStatus.SCHEDULED)
+                .count();
+
+        return PilotStatisticsResponse.builder()
+                .pilotId(pilot.getId())
+                .firstName(pilot.getFirstName())
+                .lastName(pilot.getLastName())
+                .totalFlightHours(pilot.getTotalFlightHours())
+                .totalFlightsCompleted(completed)
+                .upcomingFlightsScheduled(upcoming)
+                .build();
     }
 
     @Transactional

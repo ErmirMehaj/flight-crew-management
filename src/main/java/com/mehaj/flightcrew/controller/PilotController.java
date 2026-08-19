@@ -3,6 +3,7 @@ package com.mehaj.flightcrew.controller;
 import com.mehaj.flightcrew.dto.AvailabilityQuery;
 import com.mehaj.flightcrew.dto.PilotCreateRequest;
 import com.mehaj.flightcrew.dto.PilotResponse;
+import com.mehaj.flightcrew.dto.PilotStatisticsResponse;
 import com.mehaj.flightcrew.dto.PilotUpdateRequest;
 import com.mehaj.flightcrew.service.PilotService;
 import jakarta.validation.Valid;
@@ -39,6 +40,11 @@ public class PilotController {
     @GetMapping("/{id}")
     public ResponseEntity<PilotResponse> getPilotById(@PathVariable Long id) {
         return ResponseEntity.ok(pilotService.getPilotById(id));
+    }
+
+    @GetMapping("/{id}/statistics")
+    public ResponseEntity<PilotStatisticsResponse> getPilotStatistics(@PathVariable Long id) {
+        return ResponseEntity.ok(pilotService.getPilotStatistics(id));
     }
 
     @PutMapping("/{id}")
