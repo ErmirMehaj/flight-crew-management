@@ -10,9 +10,13 @@ import com.mehaj.flightcrew.mapper.CrewMemberMapper;
 import com.mehaj.flightcrew.repository.CrewMemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -23,6 +27,9 @@ public class CrewMemberService {
 
     private final CrewMemberRepository crewMemberRepository;
     private final CrewMemberMapper crewMemberMapper;
+
+    @Value("${crew.max-weekly-hours}")
+    private double maxWeeklyHours;
 
     @Transactional
     public CrewMemberResponse createCrewMember(CrewMemberCreateRequest request) {
@@ -47,6 +54,15 @@ public class CrewMemberService {
 
     public List<CrewMemberResponse> getAllCrewMembers() {
         return crewMemberRepository.findAll().stream()
+                .map(crewMemberMapper::toResponse)
+                .toList();
+    }
+
+    public List<CrewMemberResponse> getAvailableCrew(LocalDateTime start, LocalDateTime end) {
+        double flightHours = Duration.between(start, end).toMinutes() / 60.0;
+        LocalDate windowStart = start.toLocalDate().minusDays(6);
+
+        return crewMemberRepository.findAvailableCrew(start, end, windowStart, flightHours, maxWeeklyHours).stream()
                 .map(crewMemberMapper::toResponse)
                 .toList();
     }

@@ -1,5 +1,6 @@
 package com.mehaj.flightcrew.controller;
 
+import com.mehaj.flightcrew.dto.AvailabilityQuery;
 import com.mehaj.flightcrew.dto.CrewMemberCreateRequest;
 import com.mehaj.flightcrew.dto.CrewMemberResponse;
 import com.mehaj.flightcrew.dto.CrewMemberUpdateRequest;
@@ -28,6 +29,11 @@ public class CrewMemberController {
     @GetMapping
     public ResponseEntity<List<CrewMemberResponse>> getAllCrewMembers() {
         return ResponseEntity.ok(crewMemberService.getAllCrewMembers());
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<CrewMemberResponse>> getAvailableCrew(@Valid AvailabilityQuery query) {
+        return ResponseEntity.ok(crewMemberService.getAvailableCrew(query.getDepartureTime(), query.getArrivalTime()));
     }
 
     @GetMapping("/{id}")
