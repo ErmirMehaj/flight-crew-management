@@ -3,6 +3,7 @@ package com.mehaj.flightcrew.controller;
 import com.mehaj.flightcrew.dto.AircraftCreateRequest;
 import com.mehaj.flightcrew.dto.AircraftResponse;
 import com.mehaj.flightcrew.dto.AircraftUpdateRequest;
+import com.mehaj.flightcrew.dto.AvailabilityQuery;
 import com.mehaj.flightcrew.service.AircraftService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,11 @@ public class AircraftController {
     @GetMapping
     public ResponseEntity<List<AircraftResponse>> getAllAircraft() {
         return ResponseEntity.ok(aircraftService.getAllAircraft());
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<AircraftResponse>> getAvailableAircraft(@Valid AvailabilityQuery query) {
+        return ResponseEntity.ok(aircraftService.getAvailableAircraft(query.getDepartureTime(), query.getArrivalTime()));
     }
 
     @GetMapping("/{id}")

@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -43,6 +44,12 @@ public class AircraftService {
 
     public List<AircraftResponse> getAllAircraft() {
         return aircraftRepository.findAll().stream()
+                .map(aircraftMapper::toResponse)
+                .toList();
+    }
+
+    public List<AircraftResponse> getAvailableAircraft(LocalDateTime start, LocalDateTime end) {
+        return aircraftRepository.findAvailableAircraft(start, end).stream()
                 .map(aircraftMapper::toResponse)
                 .toList();
     }
