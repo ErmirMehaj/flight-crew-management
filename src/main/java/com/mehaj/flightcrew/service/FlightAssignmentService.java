@@ -13,6 +13,7 @@ import com.mehaj.flightcrew.entity.FlightStatus;
 import com.mehaj.flightcrew.entity.Pilot;
 import com.mehaj.flightcrew.entity.PilotRank;
 import com.mehaj.flightcrew.entity.PilotStatus;
+import com.mehaj.flightcrew.entity.WorkHours;
 import com.mehaj.flightcrew.exception.InvalidFlightStateException;
 import com.mehaj.flightcrew.exception.ResourceNotFoundException;
 import com.mehaj.flightcrew.exception.SchedulingConflictException;
@@ -156,7 +157,7 @@ public class FlightAssignmentService {
                     "Crew member " + crewMember.getEmployeeId() + " is already assigned to another overlapping flight");
         }
 
-        double flightHours = Duration.between(flight.getDepartureTime(), flight.getArrivalTime()).toMinutes() / 60.0;
+        double flightHours = calculateFlightHours(flight);
         LocalDate windowStart = flight.getDepartureTime().toLocalDate().minusDays(6);
         double hoursAlreadyLogged = workHoursRepository.sumHoursWorkedSince(crewMemberId, windowStart);
         if (hoursAlreadyLogged + flightHours > maxWeeklyHours) {
@@ -176,6 +177,50 @@ public class FlightAssignmentService {
 
         log.info("Assigned crew member id={} to flight id={} role={}", crewMemberId, flightId, role);
         return flightMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public FlightResponse completeFlight(Long flightId) {
+        Flight flight = findFlightOrThrow(flightId);
+        requireScheduled(flight);
+
+        if (flight.getAircraft() == null) {
+            throw new InvalidFlightStateException(
+                    "Cannot complete flight " + flightId + " because it has no aircraft assigned");
+        }
+        if (flight.getPilotAssignments().isEmpty()) {
+            throw new InvalidFlightStateException(
+                    "Cannot complete flight " + flightId + " because it has no pilots assigned");
+        }
+
+        double flightHours = calculateFlightHours(flight);
+        LocalDate flightDate = flight.getDepartureTime().toLocalDate();
+
+        for (FlightPilotAssignment assignment : flight.getPilotAssignments()) {
+            Pilot pilot = assignment.getPilot();
+            pilot.setTotalFlightHours(pilot.getTotalFlightHours() + flightHours);
+        }
+
+        for (FlightCrewAssignment assignment : flight.getCrewAssignments()) {
+            WorkHours workHours = WorkHours.builder()
+                    .crewMember(assignment.getCrewMember())
+                    .flight(flight)
+                    .hoursWorked(flightHours)
+                    .workDate(flightDate)
+                    .build();
+            workHoursRepository.save(workHours);
+        }
+
+        flight.setStatus(FlightStatus.COMPLETED);
+        Flight saved = flightRepository.save(flight);
+
+        log.info("Completed flight id={}: {} pilot(s) credited {} hours, {} work-hours record(s) created",
+                flightId, flight.getPilotAssignments().size(), flightHours, flight.getCrewAssignments().size());
+        return flightMapper.toResponse(saved);
+    }
+
+    private double calculateFlightHours(Flight flight) {
+        return Duration.between(flight.getDepartureTime(), flight.getArrivalTime()).toMinutes() / 60.0;
     }
 
     private Flight findFlightOrThrow(Long flightId) {

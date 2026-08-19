@@ -69,4 +69,9 @@ public class FlightController {
                                                        @RequestParam CrewPosition role) {
         return ResponseEntity.ok(flightAssignmentService.assignCrew(id, crewMemberId, role));
     }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<FlightResponse> completeFlight(@PathVariable Long id) {
+        return ResponseEntity.ok(flightAssignmentService.completeFlight(id));
+    }
 }
