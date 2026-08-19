@@ -1,6 +1,6 @@
 # Flight Crew Management System
 
-A backend REST API for managing an airline's pilots, cabin crew, aircraft, and flights — built from scratch as a learning project to practice production-style Spring Boot architecture, JPA relationship modeling, and business-rule-driven service design.
+A backend REST API for managing an airline's pilots, cabin crew, aircraft, and flights, built from scratch as a learning project to practice production-style Spring Boot architecture, JPA relationship modeling, and business-rule-driven service design.
 
 It's not just CRUD. The interesting part is the scheduling logic: pilots can't be double-booked or assigned while unavailable, aircraft can't be assigned to overlapping flights, crew members can't be scheduled past a configurable weekly hour limit, and completing a flight has real side effects (crediting pilot flight hours, logging crew work hours) rather than just flipping a status flag.
 
@@ -21,27 +21,27 @@ It's not just CRUD. The interesting part is the scheduling logic: pilots can't b
 Standard layered architecture — each layer depends only on the one directly beneath it:
 
 ```
-controller  → HTTP concerns only: status codes, routing, request/response shape
-service     → business rules, orchestration, transactions
-repository  → Spring Data JPA, plus hand-written JPQL for overlap/aggregate queries
-entity      → JPA-mapped domain model
-dto         → API request/response contracts, decoupled from the entity shape
-mapper      → entity ↔ dto conversion
-exception   → custom exceptions + a single @RestControllerAdvice mapping them to HTTP
-config      → OpenAPI metadata
+controller  -> HTTP concerns only: status codes, routing, request/response shape
+service     -> business rules, orchestration, transactions
+repository  -> Spring Data JPA, plus hand-written JPQL for overlap/aggregate queries
+entity      -> JPA-mapped domain model
+dto         -> API request/response contracts, decoupled from the entity shape
+mapper      -> entity ↔ dto conversion
+exception   -> custom exceptions + a single @RestControllerAdvice mapping them to HTTP
+config      -> OpenAPI metadata
 ```
 
-Two services intentionally split what might look like one: `FlightService` handles plain CRUD, while `FlightAssignmentService` owns every cross-entity operation (assigning aircraft/pilots/crew, completing/cancelling a flight) — keeping the constructor dependency count and cognitive scope of each class manageable.
+Two services intentionally split what might look like one: `FlightService` handles plain CRUD, while `FlightAssignmentService` owns every cross-entity operation (assigning aircraft/pilots/crew, completing/cancelling a flight), keeping the constructor dependency count and cognitive scope of each class manageable.
 
 ## Domain model
 
 ```
-Pilot ──1:N──▶ Availability            (unavailability windows; backs the "pilot can't be assigned if unavailable" rule)
-CrewMember ──1:N──▶ WorkHours          (one row per completed flight worked; backs the weekly hour cap)
+Pilot ──1:N-> Availability            (unavailability windows; backs the "pilot can't be assigned if unavailable" rule)
+CrewMember ──1:N-> WorkHours          (one row per completed flight worked; backs the weekly hour cap)
 
-Flight ──N:1──▶ Aircraft
-Flight ──1:N──▶ FlightPilotAssignment ──N:1──▶ Pilot
-Flight ──1:N──▶ FlightCrewAssignment  ──N:1──▶ CrewMember
+Flight ──N:1-> Aircraft
+Flight ──1:N-> FlightPilotAssignment ──N:1-> Pilot
+Flight ──1:N-> FlightCrewAssignment  ──N:1-> CrewMember
 ```
 
 `FlightPilotAssignment`/`FlightCrewAssignment` are explicit join entities (not `@ManyToMany`) so each assignment can carry its own role and timestamp — the standard pattern for a many-to-many relationship that needs metadata on the relationship itself.
