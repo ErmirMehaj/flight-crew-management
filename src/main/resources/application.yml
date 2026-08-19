@@ -3,7 +3,7 @@ spring:
     name: flight-crew-management
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/flightcrew
+    url: jdbc:postgresql://localhost:5433/flightcrew
     username: flightcrew
     password: flightcrew
 

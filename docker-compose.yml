@@ -7,7 +7,10 @@ services:
       POSTGRES_USER: flightcrew
       POSTGRES_PASSWORD: flightcrew
     ports:
-      - "5432:5432"
+      # Host port 5433 (not 5432) to avoid clashing with a local Postgres
+      # install on the same machine -- the container's internal port stays
+      # 5432, only the host-side mapping changes.
+      - "5433:5432"
     volumes:
       - flightcrew-pgdata:/var/lib/postgresql/data
 
