@@ -167,4 +167,11 @@ class PilotControllerTest {
 
         verify(pilotService).deletePilot(1L);
     }
+
+    @Test
+    void unknownRoute_returns404_notSwallowedAs500ByTheCatchAllHandler() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
 }

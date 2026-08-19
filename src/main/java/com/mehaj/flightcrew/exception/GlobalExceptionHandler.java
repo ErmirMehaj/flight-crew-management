@@ -9,6 +9,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -56,6 +57,15 @@ public class GlobalExceptionHandler {
                 .map(fe -> new ErrorResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
         return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed", request, fieldErrors);
+    }
+
+    // Thrown by Spring itself when a request matches no controller mapping
+    // and no static resource. Handled explicitly so it isn't swallowed by
+    // the catch-all below and misreported as a 500.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND,
+                "No endpoint found for " + request.getMethod() + " " + request.getRequestURI(), request, null);
     }
 
     @ExceptionHandler(Exception.class)
