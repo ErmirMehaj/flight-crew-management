@@ -3,6 +3,7 @@ package com.mehaj.flightcrew.controller;
 import com.mehaj.flightcrew.dto.FlightCreateRequest;
 import com.mehaj.flightcrew.dto.FlightResponse;
 import com.mehaj.flightcrew.dto.FlightUpdateRequest;
+import com.mehaj.flightcrew.entity.CrewPosition;
 import com.mehaj.flightcrew.entity.PilotRank;
 import com.mehaj.flightcrew.service.FlightAssignmentService;
 import com.mehaj.flightcrew.service.FlightService;
@@ -60,5 +61,12 @@ public class FlightController {
                                                         @PathVariable Long pilotId,
                                                         @RequestParam PilotRank role) {
         return ResponseEntity.ok(flightAssignmentService.assignPilot(id, pilotId, role));
+    }
+
+    @PostMapping("/{id}/crew/{crewMemberId}")
+    public ResponseEntity<FlightResponse> assignCrew(@PathVariable Long id,
+                                                       @PathVariable Long crewMemberId,
+                                                       @RequestParam CrewPosition role) {
+        return ResponseEntity.ok(flightAssignmentService.assignCrew(id, crewMemberId, role));
     }
 }

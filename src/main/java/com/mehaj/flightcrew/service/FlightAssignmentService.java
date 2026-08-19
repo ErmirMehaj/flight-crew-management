@@ -3,7 +3,11 @@ package com.mehaj.flightcrew.service;
 import com.mehaj.flightcrew.dto.FlightResponse;
 import com.mehaj.flightcrew.entity.Aircraft;
 import com.mehaj.flightcrew.entity.AircraftStatus;
+import com.mehaj.flightcrew.entity.CrewMember;
+import com.mehaj.flightcrew.entity.CrewPosition;
+import com.mehaj.flightcrew.entity.CrewStatus;
 import com.mehaj.flightcrew.entity.Flight;
+import com.mehaj.flightcrew.entity.FlightCrewAssignment;
 import com.mehaj.flightcrew.entity.FlightPilotAssignment;
 import com.mehaj.flightcrew.entity.FlightStatus;
 import com.mehaj.flightcrew.entity.Pilot;
@@ -15,14 +19,20 @@ import com.mehaj.flightcrew.exception.SchedulingConflictException;
 import com.mehaj.flightcrew.mapper.FlightMapper;
 import com.mehaj.flightcrew.repository.AircraftRepository;
 import com.mehaj.flightcrew.repository.AvailabilityRepository;
+import com.mehaj.flightcrew.repository.CrewMemberRepository;
+import com.mehaj.flightcrew.repository.FlightCrewAssignmentRepository;
 import com.mehaj.flightcrew.repository.FlightPilotAssignmentRepository;
 import com.mehaj.flightcrew.repository.FlightRepository;
 import com.mehaj.flightcrew.repository.PilotRepository;
+import com.mehaj.flightcrew.repository.WorkHoursRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -42,9 +52,15 @@ public class FlightAssignmentService {
     private final FlightRepository flightRepository;
     private final AircraftRepository aircraftRepository;
     private final PilotRepository pilotRepository;
+    private final CrewMemberRepository crewMemberRepository;
     private final FlightPilotAssignmentRepository flightPilotAssignmentRepository;
+    private final FlightCrewAssignmentRepository flightCrewAssignmentRepository;
     private final AvailabilityRepository availabilityRepository;
+    private final WorkHoursRepository workHoursRepository;
     private final FlightMapper flightMapper;
+
+    @Value("${crew.max-weekly-hours}")
+    private double maxWeeklyHours;
 
     @Transactional
     public FlightResponse assignAircraft(Long flightId, Long aircraftId) {
@@ -113,6 +129,52 @@ public class FlightAssignmentService {
         Flight saved = flightRepository.save(flight);
 
         log.info("Assigned pilot id={} to flight id={} role={}", pilotId, flightId, role);
+        return flightMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public FlightResponse assignCrew(Long flightId, Long crewMemberId, CrewPosition role) {
+        Flight flight = findFlightOrThrow(flightId);
+        requireScheduled(flight);
+
+        CrewMember crewMember = crewMemberRepository.findById(crewMemberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Crew member not found with id " + crewMemberId));
+
+        if (crewMember.getStatus() != CrewStatus.ACTIVE) {
+            throw new SchedulingConflictException(
+                    "Crew member " + crewMember.getEmployeeId() + " is not ACTIVE (status: " + crewMember.getStatus() + ")");
+        }
+
+        if (flightCrewAssignmentRepository.existsByFlightIdAndCrewMemberId(flightId, crewMemberId)) {
+            throw new SchedulingConflictException(
+                    "Crew member " + crewMember.getEmployeeId() + " is already assigned to this flight");
+        }
+
+        if (flightCrewAssignmentRepository.existsOverlappingAssignment(
+                crewMemberId, flight.getDepartureTime(), flight.getArrivalTime())) {
+            throw new SchedulingConflictException(
+                    "Crew member " + crewMember.getEmployeeId() + " is already assigned to another overlapping flight");
+        }
+
+        double flightHours = Duration.between(flight.getDepartureTime(), flight.getArrivalTime()).toMinutes() / 60.0;
+        LocalDate windowStart = flight.getDepartureTime().toLocalDate().minusDays(6);
+        double hoursAlreadyLogged = workHoursRepository.sumHoursWorkedSince(crewMemberId, windowStart);
+        if (hoursAlreadyLogged + flightHours > maxWeeklyHours) {
+            throw new SchedulingConflictException(
+                    "Crew member " + crewMember.getEmployeeId() + " would exceed the " + maxWeeklyHours
+                            + "-hour weekly limit (" + hoursAlreadyLogged + " logged + " + flightHours + " for this flight)");
+        }
+
+        FlightCrewAssignment assignment = FlightCrewAssignment.builder()
+                .flight(flight)
+                .crewMember(crewMember)
+                .role(role)
+                .assignedAt(LocalDateTime.now())
+                .build();
+        flight.getCrewAssignments().add(assignment);
+        Flight saved = flightRepository.save(flight);
+
+        log.info("Assigned crew member id={} to flight id={} role={}", crewMemberId, flightId, role);
         return flightMapper.toResponse(saved);
     }
 
