@@ -88,7 +88,7 @@ The API is available at `http://localhost:8080`, Swagger UI at `http://localhost
 mvn test
 ```
 
-112 tests, no database required — service-layer logic is verified with pure Mockito unit tests (`@ExtendWith(MockitoExtension.class)`), and the HTTP layer (routing, JSON, validation, error mapping) is verified separately with Spring's `@WebMvcTest` slice + MockMvc, with the service layer mocked out in both cases. The full suite runs in a few seconds.
+112 tests, no database required, service-layer logic is verified with pure Mockito unit tests (`@ExtendWith(MockitoExtension.class)`), and the HTTP layer (routing, JSON, validation, error mapping) is verified separately with Spring's `@WebMvcTest` slice + MockMvc, with the service layer mocked out in both cases. The full suite runs in a few seconds.
 
 ## Validation
 
@@ -96,14 +96,14 @@ Beyond the automated test suite, the application was run end-to-end against a re
 
 That pass caught two real issues neither the unit nor slice tests could have, since both mock away the exact thing that broke:
 
-- **A PostgreSQL port conflict.** A local Homebrew Postgres install was already bound to `127.0.0.1:5432`, which macOS resolves ahead of Docker's `0.0.0.0:5432` for connections to `localhost` — the app was silently connecting to the wrong database entirely. Fixed by moving the Docker container to host port `5433`.
+- **A PostgreSQL port conflict.** A local Homebrew Postgres install was already bound to `127.0.0.1:5432`, which macOS resolves ahead of Docker's `0.0.0.0:5432` for connections to `localhost`, the app was silently connecting to the wrong database entirely. Fixed by moving the Docker container to host port `5433`.
 - **A routing bug in the global exception handler.** Any URL with no matching route (a typo, or a path for a feature that doesn't exist, like `/actuator/health`) was caught by the catch-all `@ExceptionHandler(Exception.class)` and misreported as `500` instead of `404`, pre-empting Spring's own correct default handling. Fixed with an explicit handler for `NoResourceFoundException`, plus a regression test.
 
 ## Notable design decisions
 
-- **DTOs are never entities.** Every endpoint takes/returns a purpose-built request/response DTO — separate `Create`/`Update`/`Response` shapes per entity — so server-owned fields (status defaults, computed statistics) can never be set directly by a client, and the API contract doesn't leak the database schema.
+- **DTOs are never entities.** Every endpoint takes/returns a purpose-built request/response DTO — separate `Create`/`Update`/`Response` shapes per entity, so server-owned fields (status defaults, computed statistics) can never be set directly by a client, and the API contract doesn't leak the database schema.
 - **`FetchType.LAZY` set explicitly on every `@ManyToOne`**, since JPA's own default (`EAGER`) silently over-fetches.
-- **Overlap checks reuse the same interval-overlap SQL pattern** (`existing.start < new.end AND existing.end > new.start`) across aircraft double-booking, pilot double-booking, and pilot unavailability — recognized as the same abstract problem applied to three different resources, rather than three different implementations.
+- **Overlap checks reuse the same interval-overlap SQL pattern** (`existing.start < new.end AND existing.end > new.start`) across aircraft double-booking, pilot double-booking, and pilot unavailability, recognized as the same abstract problem applied to three different resources, rather than three different implementations.
 - **The "available X" endpoints push filtering into SQL** (correlated `NOT EXISTS` / scalar subqueries) since the candidate set is the whole fleet/roster, while **per-flight side effects (`completeFlight`) filter in Java** since the data volume per flight is tiny — the same judgment applied at opposite scales.
 
 ## Possible next steps
