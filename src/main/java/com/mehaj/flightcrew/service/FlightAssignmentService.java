@@ -4,18 +4,26 @@ import com.mehaj.flightcrew.dto.FlightResponse;
 import com.mehaj.flightcrew.entity.Aircraft;
 import com.mehaj.flightcrew.entity.AircraftStatus;
 import com.mehaj.flightcrew.entity.Flight;
+import com.mehaj.flightcrew.entity.FlightPilotAssignment;
 import com.mehaj.flightcrew.entity.FlightStatus;
+import com.mehaj.flightcrew.entity.Pilot;
+import com.mehaj.flightcrew.entity.PilotRank;
+import com.mehaj.flightcrew.entity.PilotStatus;
 import com.mehaj.flightcrew.exception.InvalidFlightStateException;
 import com.mehaj.flightcrew.exception.ResourceNotFoundException;
 import com.mehaj.flightcrew.exception.SchedulingConflictException;
 import com.mehaj.flightcrew.mapper.FlightMapper;
 import com.mehaj.flightcrew.repository.AircraftRepository;
+import com.mehaj.flightcrew.repository.AvailabilityRepository;
+import com.mehaj.flightcrew.repository.FlightPilotAssignmentRepository;
 import com.mehaj.flightcrew.repository.FlightRepository;
+import com.mehaj.flightcrew.repository.PilotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -33,6 +41,9 @@ public class FlightAssignmentService {
 
     private final FlightRepository flightRepository;
     private final AircraftRepository aircraftRepository;
+    private final PilotRepository pilotRepository;
+    private final FlightPilotAssignmentRepository flightPilotAssignmentRepository;
+    private final AvailabilityRepository availabilityRepository;
     private final FlightMapper flightMapper;
 
     @Transactional
@@ -59,6 +70,49 @@ public class FlightAssignmentService {
         flight.setAircraft(aircraft);
         Flight saved = flightRepository.save(flight);
         log.info("Assigned aircraft id={} to flight id={}", aircraftId, flightId);
+        return flightMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public FlightResponse assignPilot(Long flightId, Long pilotId, PilotRank role) {
+        Flight flight = findFlightOrThrow(flightId);
+        requireScheduled(flight);
+
+        Pilot pilot = pilotRepository.findById(pilotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pilot not found with id " + pilotId));
+
+        if (pilot.getStatus() != PilotStatus.ACTIVE) {
+            throw new SchedulingConflictException(
+                    "Pilot " + pilot.getLicenseNumber() + " is not ACTIVE (status: " + pilot.getStatus() + ")");
+        }
+
+        if (flightPilotAssignmentRepository.existsByFlightIdAndPilotId(flightId, pilotId)) {
+            throw new SchedulingConflictException(
+                    "Pilot " + pilot.getLicenseNumber() + " is already assigned to this flight");
+        }
+
+        if (availabilityRepository.existsOverlappingUnavailability(
+                pilotId, flight.getDepartureTime(), flight.getArrivalTime())) {
+            throw new SchedulingConflictException(
+                    "Pilot " + pilot.getLicenseNumber() + " is unavailable during this flight's schedule");
+        }
+
+        if (flightPilotAssignmentRepository.existsOverlappingAssignment(
+                pilotId, flight.getDepartureTime(), flight.getArrivalTime())) {
+            throw new SchedulingConflictException(
+                    "Pilot " + pilot.getLicenseNumber() + " is already assigned to another overlapping flight");
+        }
+
+        FlightPilotAssignment assignment = FlightPilotAssignment.builder()
+                .flight(flight)
+                .pilot(pilot)
+                .role(role)
+                .assignedAt(LocalDateTime.now())
+                .build();
+        flight.getPilotAssignments().add(assignment);
+        Flight saved = flightRepository.save(flight);
+
+        log.info("Assigned pilot id={} to flight id={} role={}", pilotId, flightId, role);
         return flightMapper.toResponse(saved);
     }
 
