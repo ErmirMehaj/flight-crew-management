@@ -92,7 +92,7 @@ mvn test
 
 ## Validation
 
-Beyond the automated test suite, the application was run end-to-end against a real PostgreSQL instance (via Docker Compose) and exercised manually through Swagger UI / `curl` — Hibernate schema generation, every CRUD endpoint, and every business rule (aircraft/pilot/crew double-booking, pilot unavailability, the crew weekly-hour cap at its exact boundary, flight completion crediting pilot hours and logging `WorkHours`, and cancellation freeing up an aircraft) were confirmed against live data rather than mocks.
+Beyond the automated test suite, the application was run end-to-end against a real PostgreSQL instance (via Docker Compose) and exercised manually through Swagger UI / `curl`, Hibernate schema generation, every CRUD endpoint, and every business rule (aircraft/pilot/crew double-booking, pilot unavailability, the crew weekly-hour cap at its exact boundary, flight completion crediting pilot hours and logging `WorkHours`, and cancellation freeing up an aircraft) were confirmed against live data rather than mocks.
 
 That pass caught two real issues neither the unit nor slice tests could have, since both mock away the exact thing that broke:
 
@@ -103,8 +103,8 @@ That pass caught two real issues neither the unit nor slice tests could have, si
 
 - **DTOs are never entities.** Every endpoint takes/returns a purpose-built request/response DTO — separate `Create`/`Update`/`Response` shapes per entity, so server-owned fields (status defaults, computed statistics) can never be set directly by a client, and the API contract doesn't leak the database schema.
 - **`FetchType.LAZY` set explicitly on every `@ManyToOne`**, since JPA's own default (`EAGER`) silently over-fetches.
-- **Overlap checks reuse the same interval-overlap SQL pattern** (`existing.start < new.end AND existing.end > new.start`) across aircraft double-booking, pilot double-booking, and pilot unavailability, recognized as the same abstract problem applied to three different resources, rather than three different implementations.
-- **The "available X" endpoints push filtering into SQL** (correlated `NOT EXISTS` / scalar subqueries) since the candidate set is the whole fleet/roster, while **per-flight side effects (`completeFlight`) filter in Java** since the data volume per flight is tiny — the same judgment applied at opposite scales.
+- **Overlap checks reuse the same interval-overlap SQL pattern** (`existing.start < new.end AND existing.end > new.start`) across aircraft double-booking, pilot double-booking,and pilot unavailability, recognized as the same abstract problem applied to three different resources, rather than three different implementations.
+- **The "available X" endpoints push filtering into SQL** (correlated `NOT EXISTS` / scalar subqueries) since the candidate set is the whole fleet/roster, while **per-flight side effects (`completeFlight`) filter in Java** since the data volume per flight is tiny, the same judgment applied at opposite scales.
 
 ## Possible next steps
 
